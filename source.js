@@ -41,7 +41,7 @@ var SVGtoPDF = function(doc, svg, x, y, options) {
       'stroke-linecap':     {inherit: true, initial: 'butt', values: {'butt':'butt', 'round':'round', 'square':'square'}},
       'font-size':          {inherit: true, initial: 16, values: {'xx-small':9, 'x-small':10, 'small':13, 'medium':16, 'large':18, 'x-large':24, 'xx-large':32}},
       'font-family':        {inherit: true, initial: 'sans-serif'},
-      'font-weight':        {inherit: true, initial: 'normal', values: {'600':'bold', '700':'bold', '800':'bold', '900':'bold', 'bold':'bold', 'bolder':'bold', '500':'normal', '400':'normal', '300':'normal', '200':'normal', '100':'normal', 'normal':'normal', 'lighter':'normal'}},
+      'font-weight':        {inherit: true, initial: 'normal', values: {'600':'bold', '700':'bold', '800':'bold', '900':'bold', 'bold':'bold', 'bolder':'bold', '500':'medium', '400':'normal', '300':'normal', '200':'normal', '100':'normal', 'normal':'normal', 'lighter':'normal'}},
       'font-style':         {inherit: true, initial: 'normal', values: {'italic':'italic', 'oblique':'italic', 'normal':'normal'}},
       'text-anchor':        {inherit: true, initial: 'start', values: {'start':'start', 'middle':'middle', 'end':'end'}},
       'direction':          {inherit: true, initial: 'ltr', values: {'ltr':'ltr', 'rtl':'rtl'}},
@@ -158,6 +158,7 @@ var SVGtoPDF = function(doc, svg, x, y, options) {
       let commandStr = '';
       const skew = font.fauxItalic ? -0.25 : 0;
 
+      
       // Add the given character to the 'TJ' command string.
       function addChar(char) {
         commandStr += char.glyph;
@@ -662,7 +663,7 @@ var SVGtoPDF = function(doc, svg, x, y, options) {
       return dy1 - dy2;
     }
     function getTextPos(font, size, text) {
-      let encoded = font.encode('' + text), hex = encoded[0], pos = encoded[1], data = [];
+      let encoded = font.encode('' + text, ['tnum']), hex = encoded[0], pos = encoded[1], data = [];
       for (let i = 0; i < hex.length; i++) {
         let unicode = font.unicode ? font.unicode[parseInt(hex[i], 16)] : [text.charCodeAt(i)];
         data.push({
@@ -2308,7 +2309,12 @@ var SVGtoPDF = function(doc, svg, x, y, options) {
           currentElem._defRot = currentElem.chooseValue(currentElem._rot[currentElem._rot.length - 1], parentElem && parentElem._defRot, 0);
           if (currentElem.name === 'textPath') {currentElem._y = [];}
           let fontOptions = {fauxItalic: false, fauxBold: false},
-              fontNameorLink = fontCallback(currentElem.get('font-family'), currentElem.get('font-weight') === 'bold', currentElem.get('font-style') === 'italic', fontOptions);
+              fontNameorLink = fontCallback(
+                currentElem.get('font-family'),
+                currentElem.get('font-weight'),
+                currentElem.get('font-style') === 'italic',
+                fontOptions,
+              );
           try {
             doc.font(fontNameorLink);
           } catch(e) {
