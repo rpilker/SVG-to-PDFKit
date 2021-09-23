@@ -531,9 +531,11 @@ var SVGtoPDF = function(doc, svg, x, y, options) {
         if (!result['marker-mid']) {result['marker-mid'] = result['marker'];}
         if (!result['marker-end']) {result['marker-end'] = result['marker'];}
       }
-      if (result['font']) {
+      if (result['font'] || result['font-variant'] || result['font-variant-numeric'] || result['font-variant-caps']) {
         let fontFamily = null, fontSize = null, fontStyle = "normal", fontWeight = "normal", fontVariant = "normal";
-        let parts = result['font'].split(/\s+/);
+        const fontResults = [result['font'], result['font-variant'], result['font-variant-numeric'], result['font-variant-caps']].join(' ');
+
+        let parts = fontResults.split(/\s+/);
         for (let i = 0; i < parts.length; i++) {
           switch (parts[i]) {
             case "normal":
@@ -541,7 +543,7 @@ var SVGtoPDF = function(doc, svg, x, y, options) {
             case "italic": case "oblique":
               fontStyle = parts[i];
               break;
-            case "small-caps":
+            case "small-caps": case "all-small-caps": case "all-petite-caps": case "tabular-nums":
               fontVariant = parts[i];
               break;
             case "bold": case "bolder": case "lighter": case "100": case "200": case "300":
@@ -662,8 +664,38 @@ var SVGtoPDF = function(doc, svg, x, y, options) {
       }
       return dy1 - dy2;
     }
-    function getTextPos(font, size, text) {
-      let encoded = font.encode('' + text, ['tnum']), hex = encoded[0], pos = encoded[1], data = [];
+    function getVariants(style) {
+      let allSmall = false;
+      const variants = Object.entries(style)
+        .filter(([key]) => key.indexOf('font-variant') === 0)
+        .map(([, entry]) => {
+          switch(entry) {
+            case 'all-small-caps':
+            case 'all-petite-caps':
+              allSmall = true;
+            case 'small-caps':
+            case 'all-small-caps':
+            case 'all-petite-caps':
+              return 'smcp';
+            case 'tabular-nums':
+            case 'tnums':
+              return 'tnums';
+            default:
+              return '';
+          }
+        })
+        .reduce((acc, entry) => acc.indexOf(entry) >= 0
+            ? acc
+            : [...acc, entry],
+        []);
+      return [variants, allSmall];
+    }
+    function getTextPos(font, size, text, style) {
+      const [variants, allSmall] = getVariants(style);
+      let encoded = font.encode('' + (allSmall ? text.toLowerCase() : text), variants),
+        hex = encoded[0],
+        pos = encoded[1],
+        data = [];
       for (let i = 0; i < hex.length; i++) {
         let unicode = font.unicode ? font.unicode[parseInt(hex[i], 16)] : [text.charCodeAt(i)];
         data.push({
@@ -2360,7 +2392,7 @@ var SVGtoPDF = function(doc, svg, x, y, options) {
                   words = renderedText.split(/(\s)/);
                 }
                 for (let w = 0; w < words.length; w++) {
-                  let pos = getTextPos(currentElem._font.font, currentElem._font.size, words[w]);
+                  let pos = getTextPos(currentElem._font.font, currentElem._font.size, words[w], currentElem.style);
                   for (let j = 0; j < pos.length; j++) {
                     let index = currentElem._index,
                         xAttr = currentElem._x[index],
