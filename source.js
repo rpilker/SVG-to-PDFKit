@@ -679,7 +679,7 @@ var SVGtoPDF = function(doc, svg, x, y, options) {
               return 'smcp';
             case 'tabular-nums':
             case 'tnums':
-              return 'tnums';
+              return 'tnum';
             default:
               return '';
           }
@@ -2513,7 +2513,9 @@ var SVGtoPDF = function(doc, svg, x, y, options) {
     };
 
     options = options || {};
-    var pxToPt = options.assumePt ? 1 : (72/96), // 1px = 72/96pt, but only if assumePt is false
+    var pointsPerInch = options.pointsPerInch || 72,
+        pxToPt = options.assumePt ? 72 / pointsPerInch : (pointsPerInch/96), // 1px = 72/96pt, but only if assumePt is false
+        // pxToPt = options.assumePt ? 0.99626401 : (72/96), // 1px = 72/96pt, but only if assumePt is false
         viewportWidth = (options.width || doc.page.width) / pxToPt,
         viewportHeight = (options.height || doc.page.height) / pxToPt,
         preserveAspectRatio = options.preserveAspectRatio || null, // default to null so that the attr can override if not passed
